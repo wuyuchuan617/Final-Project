@@ -39,6 +39,8 @@ contract Pool is VRFV2WrapperConsumerBase, ERC20 {
     // ==== STORAGE ==== //
 
     uint256 handleFeeRate = 10;
+    uint256 randomHandleFeeRate = 8;
+    uint256 autoHandleFeeRate = 5;
     uint256 offsetCount;
 
     Factory factory;
@@ -102,24 +104,12 @@ contract Pool is VRFV2WrapperConsumerBase, ERC20 {
 
     function autoRedeem(uint256 amount) public returns (uint256 redeemAmount) {
         for (uint256 j; j < factory.getpCO2AddrLength() - 1; ++j) {
-            address tco2 = factory.pCO2AddrList(j);
-            // This second loop only gets called when the `amount` is larger
-            // than the first tco2 balance in the array. Here, in every iteration the
-            // tco2 balance is smaller than the remaining amount while the last bit of
-            // the `amount` which is smaller than the tco2 balance, got redeemed
-            // in the first loop.
-            uint256 balance = ERC20(tco2).balanceOf(address(this));
+            address poc2 = factory.pCO2AddrList(j);
 
-            // Ignore empty balances so we don't generate redundant transactions.
-            //slither-disable-next-line incorrect-equality
+            uint256 balance = ERC20(poc2).balanceOf(address(this));
+
             if (balance < amount) continue;
-
-            // tco2s[nonZeroCount] = tco2;
-            // amounts[nonZeroCount] = balance;
-            redeem(tco2, balance);
-            // unchecked {
-            //     ++nonZeroCount;
-            // }
+            redeem(poc2, balance);
             return balance;
         }
     }

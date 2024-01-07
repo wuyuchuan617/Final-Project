@@ -97,9 +97,8 @@ contract Factory {
         return projectData;
     }
 
-    function getClaim(uint256 claimId) public view returns (Claim memory) {
-        Claim memory claim = allClaims[claimId];
-        return claim;
+    function getClaim(uint256 claimId) public view returns (Claim memory claim) {
+        claim = allClaims[claimId];
     }
 
     function checkIsPCO2WhiteList(address _pCO2Addr) public view returns (bool) {
@@ -150,7 +149,6 @@ contract Factory {
     function auditClaim(uint256 claimId) public isAuditor returns (address) {
         Claim memory claim = getClaim(claimId);
         Project memory project = getProject(claim.projectId);
-        // ProjectData memory projectData = getProjectData(claim.projectId);
 
         address _projectOwner = project.projectOwner;
         uint256 reductionAmount = claim.claimedReduction;

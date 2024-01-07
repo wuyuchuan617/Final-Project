@@ -166,10 +166,10 @@ contract FactoryTest is Test, SetupScript {
 
         uint256 redeemAmount = _amountOut; // 499999
         // uint256 orgBalance = ERC20(pCO2).balanceOf(address(poolInstance));
-        ERC20(poolInstance).approve(address(poolInstance), 299999);
+        ERC20(poolInstance).approve(address(poolInstance), redeemAmount);
         (offsetAmount) = poolInstance.redeem(pCO2, 200000);
-        (offsetAmount) = poolInstance.autoRedeem(redeemAmount);
-        console2.log("offsetAmount", offsetAmount);
+        (uint256 autoOffsetAmount) = poolInstance.autoRedeem(redeemAmount - 200000);
+        console2.log("offsetAmount", offsetAmount, autoOffsetAmount);
 
         vm.stopPrank();
     }
