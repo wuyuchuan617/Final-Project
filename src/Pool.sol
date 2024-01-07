@@ -39,15 +39,19 @@ contract Pool is VRFV2WrapperConsumerBase, ERC20 {
     // ==== STORAGE ==== //
 
     uint256 handleFeeRate = 10;
+    uint256 offsetCount;
 
     Factory factory;
     OffsetCertificate offsetCertificate;
 
     // ==== CONSTRUCTOR ==== //
 
-    constructor(Factory _factory) ERC20("CCO2", "CCO2") VRFV2WrapperConsumerBase(linkAddress, wrapperAddress) {
+    constructor(Factory _factory, OffsetCertificate _offsetCertificate)
+        ERC20("CCO2", "CCO2")
+        VRFV2WrapperConsumerBase(linkAddress, wrapperAddress)
+    {
         factory = _factory;
-        // offsetCertificate = _offsetCertificate;
+        offsetCertificate = _offsetCertificate;
     }
 
     // ==== GETTERS ==== //
@@ -62,16 +66,19 @@ contract Pool is VRFV2WrapperConsumerBase, ERC20 {
         uint256 randomAddrIdx3 = randomWords[2] % factory.getpCO2AddrLength();
 
         // 3. Get 3 random address in pCO2Addr array
-        randomAddrs =
-            [factory.pCO2Addr(randomAddrIdx1), factory.pCO2Addr(randomAddrIdx2), factory.pCO2Addr(randomAddrIdx3)];
+        randomAddrs = [
+            factory.pCO2AddrList(randomAddrIdx1),
+            factory.pCO2AddrList(randomAddrIdx2),
+            factory.pCO2AddrList(randomAddrIdx3)
+        ];
     }
 
     // ==== FUNCTIONS ==== //
 
     function deposit(address pCO2Addr, uint256 amount) public {
         // 1. check if pCO2Addr in white list
-        // (bool isInWhiteList) = factory.checkIsPCO2WhiteList(pCO2Addr);
-        // require(isInWhiteList);
+        (bool isInWhiteList) = factory.checkIsPCO2WhiteList(pCO2Addr);
+        require(isInWhiteList);
 
         // 2. tranfer pCO2 token to this contract (need approve)
         ERC20(pCO2Addr).transferFrom(msg.sender, address(this), amount);
@@ -93,6 +100,30 @@ contract Pool is VRFV2WrapperConsumerBase, ERC20 {
 
     function randomRedeem(address pCO2Addr, uint256 amount) public returns (uint256 redeemAmount) {}
 
+    function autoRedeem(uint256 amount) public returns (uint256 redeemAmount) {
+        for (uint256 j; j < factory.getpCO2AddrLength() - 1; ++j) {
+            address tco2 = factory.pCO2AddrList(j);
+            // This second loop only gets called when the `amount` is larger
+            // than the first tco2 balance in the array. Here, in every iteration the
+            // tco2 balance is smaller than the remaining amount while the last bit of
+            // the `amount` which is smaller than the tco2 balance, got redeemed
+            // in the first loop.
+            uint256 balance = ERC20(tco2).balanceOf(address(this));
+
+            // Ignore empty balances so we don't generate redundant transactions.
+            //slither-disable-next-line incorrect-equality
+            if (balance < amount) continue;
+
+            // tco2s[nonZeroCount] = tco2;
+            // amounts[nonZeroCount] = balance;
+            redeem(tco2, balance);
+            // unchecked {
+            //     ++nonZeroCount;
+            // }
+            return balance;
+        }
+    }
+
     function offset(address pCO2Addr, uint256 amount, uint256 projectId) public {
         // 1. 檢查 pCO2Addr 餘額是否足夠
         require(amount <= ERC20(pCO2Addr).balanceOf(address(msg.sender)), "");
@@ -104,7 +135,8 @@ contract Pool is VRFV2WrapperConsumerBase, ERC20 {
         Pco2Token(pCO2Addr).burn(msg.sender, amount);
 
         // 4. mint offset certificate
-        // offsetCertificate.mint(msg.sender, reportId);
+        offsetCount += 1;
+        offsetCertificate.mint(msg.sender, offsetCount);
     }
 
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {

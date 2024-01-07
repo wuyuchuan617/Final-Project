@@ -24,7 +24,7 @@ contract Factory {
 
     mapping(address => bool) public pCO2WhiteList;
 
-    address[] public pCO2Addr;
+    address[] public pCO2AddrList;
 
     GreenNFT greenNFT;
     Pool public pool;
@@ -107,7 +107,7 @@ contract Factory {
     }
 
     function getpCO2AddrLength() public view returns (uint256 count) {
-        return pCO2Addr.length;
+        return pCO2AddrList.length;
     }
 
     // ==== FUNCTIONS ==== //
@@ -135,13 +135,13 @@ contract Factory {
         returns (bool, uint256)
     {
         currentClaimId++;
-        Claim memory claim = Claim({
+        Claim memory newClaim = Claim({
             claimId: currentClaimId,
             projectId: _projectId,
             claimedReduction: _claimedReduction,
             claimedEmission: _claimedEmission
         });
-        allClaims[currentClaimId] = claim;
+        allClaims[currentClaimId] = newClaim;
         emit ProposeClaim(currentProjectId, _projectId, _claimedReduction, _claimedEmission);
         return (true, currentClaimId);
     }
@@ -165,7 +165,7 @@ contract Factory {
         if (reductionAmount > 0) {
             Pco2Token pCO2 = new Pco2Token("pCO2-1", "pCO2-1");
             pCO2WhiteList[address(pCO2)] = true;
-            pCO2Addr.push(address(pCO2));
+            pCO2AddrList.push(address(pCO2));
             pCO2.mint(_projectOwner, reductionAmount);
             greenNFT.mint(_projectOwner, project.projectId);
             return address(pCO2);

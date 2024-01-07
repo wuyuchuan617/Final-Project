@@ -10,6 +10,7 @@ import {Pool} from "../src/Pool.sol";
 import {Swapper} from "../src/Swapper.sol";
 import {GreenNFT} from "../src/token/GreenNFT.sol";
 import {Pco2Token} from "../src/token/Pco2Token.sol";
+import {OffsetCertificate} from "../src/token/OffsetCertificate.sol";
 
 contract TokenB is ERC20 {
     constructor() ERC20("Token B", "TKB") {}
@@ -27,6 +28,7 @@ contract SetupScript is Script {
     Factory public factoryInstance;
     Factory public proxy;
     GreenNFT public greenNFTInstance;
+    OffsetCertificate public offsetCertificateInstance;
     Pco2Token public pCO2Instance;
     Proxy public proxyInstance;
     Pool public poolInstance;
@@ -49,8 +51,8 @@ contract SetupScript is Script {
         factoryInstance = new Factory();
         proxyInstance = new Proxy(address(factoryInstance));
         proxy = Factory(address(proxyInstance));
-        poolInstance = new Pool(proxy);
-
+        offsetCertificateInstance = new OffsetCertificate();
+        poolInstance = new Pool(proxy, offsetCertificateInstance);
         usdc = new TokenB();
         swapperInstance = new Swapper(address(usdc), address(poolInstance));
         proxy.initialize(greenNFTInstance, poolInstance);

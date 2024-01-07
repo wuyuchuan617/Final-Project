@@ -141,7 +141,7 @@ contract FactoryTest is Test, SetupScript {
         deal(address(usdc), projectOwner1, usdcAmount);
         ERC20(usdc).approve(address(swapperInstance), usdcAmount);
         ERC20(poolInstance).approve(address(swapperInstance), _depositAmount);
-        swapperInstance.addLiquidity(usdcAmount, _depositAmount);
+        swapperInstance.addLiquidity(_depositAmount, usdcAmount);
 
         console2.log("reserveA", swapperInstance.reserveA());
         console2.log("reserveB", swapperInstance.reserveB());
@@ -164,10 +164,11 @@ contract FactoryTest is Test, SetupScript {
     function test_redeem(uint256 _amountOut) internal returns (uint256 offsetAmount) {
         vm.startPrank(projectOwner2);
 
-        uint256 redeemAmount = _amountOut;
+        uint256 redeemAmount = _amountOut; // 499999
         // uint256 orgBalance = ERC20(pCO2).balanceOf(address(poolInstance));
-        ERC20(poolInstance).approve(address(poolInstance), redeemAmount);
-        (offsetAmount) = poolInstance.redeem(pCO2, redeemAmount);
+        ERC20(poolInstance).approve(address(poolInstance), 299999);
+        (offsetAmount) = poolInstance.redeem(pCO2, 200000);
+        (offsetAmount) = poolInstance.autoRedeem(redeemAmount);
         console2.log("offsetAmount", offsetAmount);
 
         vm.stopPrank();
@@ -185,7 +186,9 @@ contract FactoryTest is Test, SetupScript {
         console2.log("projectOwner2 balance", ERC20(pCO2).balanceOf(projectOwner2));
         (projectData2) = proxy.getProjectData(projectId2);
         console2.log("project2", projectData2.emission);
-        // assertEq(ERC20(pCO2).balanceOf(address(poolInstance)), orgBalance - offsetAmount);
+
+        // 檢查 projectOwner2 是否有拿到 OffsetCertificate
+        assertEq(offsetCertificateInstance.balanceOf(projectOwner2), 1);
 
         vm.stopPrank();
     }
@@ -220,6 +223,7 @@ contract FactoryTest is Test, SetupScript {
         (uint256 amountOut) = test_swap();
         (uint256 offsetAmount) = test_redeem(amountOut);
         test_offset(offsetAmount);
+
         test_randomPCO2Addr();
     }
 }
