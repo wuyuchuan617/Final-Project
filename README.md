@@ -68,3 +68,9 @@ MAINNET_RPC_URL=
 3. Swapper : add liquidity, swap Pool Token
 
 #### 合約架構圖
+
+![](https://hackmd.io/_uploads/SkNXtmud6.png)
+
+#### User Flow
+
+![](https://hackmd.io/_uploads/H1wtO7Oua.png)
